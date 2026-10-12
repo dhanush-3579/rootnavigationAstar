@@ -1,10 +1,7 @@
 {
-  "school_nodes": [
+  "school_nodes": [],
+  "residential_nodes": [
     "Food Court"
   ],
-  "residential_nodes": [
-    "Boys Hostel",
-    "Girls Hostel"
-  ],
-  "metadata_status": "DEMO EXAMPLES - verify classifications before real-world use"
+  "metadata_status": "Illustrative test configuration only; verify real zone classifications."
 }
