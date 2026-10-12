@@ -1,142 +1,134 @@
-# astar.py
-
-import math
 import heapq
+import math
 from collections import deque
 
 from graph import graph, coordinates
 
 
-# Calculate straight-line distance
 def euclidean_heuristic(node, goal):
+    if node == goal:
+        return 0.0
+
+    scale = float("inf")
+
+    for source, neighbours in graph.items():
+        for destination, edge_cost in neighbours.items():
+            if edge_cost < 0:
+                raise ValueError("Edge costs must be non-negative.")
+
+            if source not in coordinates or destination not in coordinates:
+                return 0.0
+
+            x1, y1 = coordinates[source]
+            x2, y2 = coordinates[destination]
+            distance = math.hypot(x1 - x2, y1 - y2)
+
+            if distance > 0:
+                scale = min(scale, edge_cost / distance)
+
+    if scale == float("inf"):
+        scale = 0.0
+
     x1, y1 = coordinates[node]
     x2, y2 = coordinates[goal]
 
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+    return scale * math.hypot(x1 - x2, y1 - y2)
 
 
-# A* Search
 def a_star(start, goal):
-    priority_queue = []
+    if start not in graph or goal not in graph:
+        raise KeyError("Invalid start or destination.")
 
-    # Starting node
-    g = 0
-    h = euclidean_heuristic(start, goal)
-    f = g + h
-
-    heapq.heappush(priority_queue, (f, start))
-
+    queue = []
+    counter = 0
     came_from = {start: None}
-    cost_so_far = {start: 0}
+    cost_so_far = {start: 0.0}
+
+    heapq.heappush(
+        queue,
+        (euclidean_heuristic(start, goal), counter, start)
+    )
 
     nodes_expanded = 0
 
-    print("\n--- A* Evaluation: f = g + h ---")
+    print("\n--- A*: f(n) = g(n) + h(n) ---")
 
-    while priority_queue:
-
-        current_f, current = heapq.heappop(priority_queue)
-
-        # Calculate g, h and f
+    while queue:
+        current_f, _, current = heapq.heappop(queue)
         g = cost_so_far[current]
         h = euclidean_heuristic(current, goal)
-        f = g + h
+
+        if current_f > g + h + 1e-9:
+            continue
 
         nodes_expanded += 1
 
         print(
-            f"Node: {current} | "
-            f"g = {g:.2f} | "
-            f"h = {h:.2f} | "
-            f"f = {f:.2f}"
+            f"{current}: g={g:.2f}, "
+            f"h={h:.2f}, f={g + h:.2f}"
         )
 
-        # Goal reached
         if current == goal:
-            break
+            path = []
+            node = goal
 
-        # Check neighbouring locations
-        for neighbour, distance in graph[current].items():
+            while node is not None:
+                path.append(node)
+                node = came_from[node]
 
-            new_cost = cost_so_far[current] + distance
+            path.reverse()
+            return path, g, nodes_expanded
 
-            if neighbour not in cost_so_far:
-                better_path = True
-            else:
-                better_path = new_cost < cost_so_far[neighbour]
+        for neighbour, edge_cost in graph[current].items():
+            if edge_cost < 0:
+                raise ValueError("Edge costs must be non-negative.")
 
-            if better_path:
+            new_cost = g + edge_cost
 
+            if new_cost < cost_so_far.get(neighbour, float("inf")):
                 cost_so_far[neighbour] = new_cost
+                came_from[neighbour] = current
+                counter += 1
 
-                heuristic = euclidean_heuristic(neighbour, goal)
-
-                priority = new_cost + heuristic
+                h_next = euclidean_heuristic(neighbour, goal)
 
                 heapq.heappush(
-                    priority_queue,
-                    (priority, neighbour)
+                    queue,
+                    (new_cost + h_next, counter, neighbour)
                 )
 
-                came_from[neighbour] = current
-
-    # If destination cannot be reached
-    if goal not in came_from:
-        return None, float("inf"), nodes_expanded
-
-    # Construct final path
-    path = []
-
-    current = goal
-
-    while current is not None:
-        path.append(current)
-        current = came_from[current]
-
-    path.reverse()
-
-    return path, cost_so_far[goal], nodes_expanded
+    return None, float("inf"), nodes_expanded
 
 
-# BFS Search
 def bfs(start, goal):
+    if start not in graph or goal not in graph:
+        raise KeyError("Invalid start or destination.")
 
     queue = deque([start])
-
     came_from = {start: None}
-
     nodes_expanded = 0
 
     while queue:
-
         current = queue.popleft()
-
         nodes_expanded += 1
 
         if current == goal:
             break
 
         for neighbour in graph[current]:
-
             if neighbour not in came_from:
-
                 came_from[neighbour] = current
-
                 queue.append(neighbour)
 
-    # If destination cannot be reached
     if goal not in came_from:
         return None, float("inf"), nodes_expanded
 
-    # Construct final path
     path = []
+    node = goal
 
-    current = goal
-
-    while current is not None:
-        path.append(current)
-        current = came_from[current]
+    while node is not None:
+        path.append(node)
+        node = came_from[node]
 
     path.reverse()
-
     return path, len(path) - 1, nodes_expanded

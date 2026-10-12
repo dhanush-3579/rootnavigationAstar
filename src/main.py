@@ -1,51 +1,54 @@
-# main.py
-
 from astar import a_star, bfs
+from graph import graph
+
+
+def find_location(user_input):
+    """Match a location regardless of capitalization or extra spaces."""
+    cleaned = user_input.strip().casefold()
+
+    for location in graph:
+        if location.strip().casefold() == cleaned:
+            return location
+
+    return None
 
 
 def main():
-    print("=== Campus Route Navigation ===")
-    print("Available locations:")
-    print("Boys Hostel")
-    print("Girls Hostel")
-    print("Food Court")
-    print("Sports Complex")
-    print("Gym")
-    print("Parking")
-    print("Main Gate")
+    locations = list(graph.keys())
 
-    start = input("\nEnter start location: ")
-    goal = input("Enter destination: ")
+    print("\nAvailable locations:")
+    for location in locations:
+        print(f"- {location}")
 
-    if start == goal:
-        print("Start and destination are the same.")
+    start_input = input("\nEnter start location: ")
+    goal_input = input("Enter destination: ")
+
+    start = find_location(start_input)
+    goal = find_location(goal_input)
+
+    if start is None or goal is None:
+        print("Invalid location. Please enter a location from the list.")
         return
 
-    try:
-        astar_path, astar_cost, astar_nodes = a_star(start, goal)
+    print("\n========== A* ROUTE ==========")
+    path, cost, nodes = a_star(start, goal)
 
-        bfs_path, bfs_hops, bfs_nodes = bfs(start, goal)
+    if path is None:
+        print("A*: No route found.")
+    else:
+        print("A* Path:", " -> ".join(path))
+        print(f"Total cost: {cost:.2f}")
+        print(f"Nodes expanded: {nodes}")
 
-        print("\n--- A* Result ---")
+    print("\n========== BFS ROUTE ==========")
+    path, hops, nodes = bfs(start, goal)
 
-        if astar_path is None:
-            print("No route found.")
-        else:
-            print("Path:", " -> ".join(astar_path))
-            print("Total cost:", round(astar_cost, 2))
-            print("Nodes expanded:", astar_nodes)
-
-        print("\n--- BFS Comparison ---")
-
-        if bfs_path is None:
-            print("No route found.")
-        else:
-            print("Path:", " -> ".join(bfs_path))
-            print("Number of hops:", bfs_hops)
-            print("Nodes expanded:", bfs_nodes)
-
-    except KeyError:
-        print("Invalid location. Please enter a location from the list.")
+    if path is None:
+        print("BFS: No route found.")
+    else:
+        print("BFS Path:", " -> ".join(path))
+        print(f"Number of hops: {hops}")
+        print(f"Nodes expanded: {nodes}")
 
 
 if __name__ == "__main__":
