@@ -22,7 +22,13 @@ def request_green_corridor(route, schedules, phase_by_junction):
         # Transfer green time only if the opposing phase remains safe.
         transfer = min(5, revised[other] - MIN_GREEN)
         if transfer <= 0:
-            raise ValueError(f"Cannot safely prioritize {junction}")
+            plans[junction] = {
+                "schedule": revised,
+                "simulation_only": True,
+            }
+            continue
+
+
 
         revised[phase] += transfer
         revised[other] -= transfer
